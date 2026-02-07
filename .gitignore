@@ -10,8 +10,8 @@ ENV/
 
 # --- Données Source (Corpus) ---
 # On ignore le contenu confidentiel mais on garde la structure
-Corpus/*
-!Corpus/.gitkeep
+#Corpus/*
+#!Corpus/.gitkeep
 
 # --- Sorties Intermédiaires (Générées) ---
 markdown_outputs/*
