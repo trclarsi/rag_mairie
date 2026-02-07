@@ -1,0 +1,39 @@
+# --- Sécurité & Environnement ---
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.python-version
+
+# --- Données Source (Corpus) ---
+# On ignore le contenu confidentiel mais on garde la structure
+Corpus/*
+!Corpus/.gitkeep
+
+# --- Sorties Intermédiaires (Générées) ---
+markdown_outputs/*
+!markdown_outputs/.gitkeep
+chunked_documents_by_tags/*
+!chunked_documents_by_tags/.gitkeep
+Assessment/assessment_results.csv
+
+# --- Index & Modèles (Lourds / Binaires) ---
+faiss_indexes/
+Embedding/cc.fr.300.bin
+*.zip
+*.bin
+*.json
+# Exception pour les fichiers de config ou de metadata nécessaires si besoin
+!pyproject.toml
+!poetry.lock
+!Querying/*.json
+
+# --- Outils & IDE ---
+.vscode/
+.idea/
+.DS_Store
+*.log
+.gemini/
