@@ -1,146 +1,137 @@
 import streamlit as st
 import os
 import sys
-import time
-import shutil
+from pathlib import Path
 
-# Ajout du dossier parent au path pour importer query_rag et pipeline
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(SCRIPT_DIR)
+# Ajout du dossier parent au path pour les imports si nécessaire
+current_dir = Path(__file__).parent
+sys.path.append(str(current_dir))
 
 from query_rag import RAGAgent
-from pipeline import run_full_pipeline
 
-# Configuration des chemins pour l'upload
-CORPUS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'Corpus'))
-
-# ==============================================================================
-# CONFIGURATION DE LA PAGE
-# ==============================================================================
+# Configuration de la page
 st.set_page_config(
-    page_title="Mairie Assistant",
-    page_icon="🏛️",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Mairie de Triffouillis - Assistant RAG",
+    page_icon="🤖",
+    layout="centered"
 )
 
-# ... (Le reste du CSS reste inchangé) ...
+# Style CSS personnalisé
 st.markdown("""
-<style>
-    .stChatMessage { border-radius: 10px; padding: 10px; }
-    .stButton button { border-radius: 20px; }
-    .source-box { background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff; margin-bottom: 10px; font-size: 0.95em; line-height: 1.4; color: #333; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .source-title { font-weight: bold; color: #007bff; margin-bottom: 5px; display: block; }
-    .similarity-score { background-color: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; font-weight: bold; color: #495057; margin-left: 10px; }
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    .main {
+        background-color: #f5f7f9;
+    }
+    .stChatMessage {
+        border-radius: 15px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .source-box {
+        background-color: #e1e8ef;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# ==============================================================================
-# BARRE LATÉRALE (SIDEBAR)
-# ==============================================================================
+@st.cache_resource
+def load_agent():
+    """Charge l'agent une seule fois et le garde en mémoire."""
+    try:
+        return RAGAgent()
+    except Exception as e:
+        st.error(f"Erreur d'initialisation de l'agent : {e}")
+        return None
+
+# Initialisation de l'agent
+agent = load_agent()
+
+# --- Sidebar pour les paramètres ---
 with st.sidebar:
-    st.image("https://img.icons8.com/color/96/city-hall.png", width=80)
-    st.title("Paramètres")
+    st.title("⚙️ Paramètres RAG")
     
-    # 1. Initialisation Automatique de l'Agent
-    if "agent" not in st.session_state:
-        try:
-            with st.spinner("Initialisation..."):
-                st.session_state.agent = RAGAgent()
-            st.success("✅ Assistant prêt")
-        except Exception as e:
-            st.error("⚠️ Assistant non initialisé")
-            st.caption("Ajoutez des documents et lancez l'indexation.")
-    else:
-        st.success("✅ Assistant Connecté")
-
-    st.divider()
-
-    # 2. Gestion des documents
-    st.subheader("📂 Base de connaissance")
-    uploaded_files = st.file_uploader("Ajouter des documents", accept_multiple_files=True)
+    st.subheader("Récupération (Retrieval)")
+    top_k = st.slider("Nombre de documents (Top-K)", min_value=1, max_value=10, value=3)
     
-    if uploaded_files:
-        if st.button("📥 Enregistrer", use_container_width=True):
-            if not os.path.exists(CORPUS_DIR): os.makedirs(CORPUS_DIR)
-            for f in uploaded_files:
-                with open(os.path.join(CORPUS_DIR, f.name), "wb") as out:
-                    shutil.copyfileobj(f, out)
-            st.toast(f"{len(uploaded_files)} fichiers ajoutés !")
-    
-    if st.button("🚀 Mettre à jour l'index", use_container_width=True):
-        with st.status("Traitement du corpus...", expanded=True) as status:
-            try:
-                st.write("Exécution de la pipeline (Docling + Whisper)...")
-                if run_full_pipeline():
-                    st.write("Rechargement de la mémoire...")
-                    st.session_state.agent = RAGAgent()
-                    status.update(label="Index mis à jour !", state="complete")
-                    st.rerun()
-                else:
-                    status.update(label="Erreur d'indexation", state="error")
-            except Exception as e:
-                st.error(f"Erreur pipeline : {e}")
-                status.update(label="Échec de la pipeline", state="error")
+    st.subheader("Génération (LLM)")
+    temp = st.slider("Température (Créativité)", min_value=0.0, max_value=1.0, value=0.2, step=0.1)
+    top_p = st.slider("Top-P (Diversité)", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
 
-    st.divider()
-
-    # 3. Paramètres Avancés
-    st.subheader("⚙️ Réglages")
-    temperature = st.slider("Créativité (Température)", 0.0, 1.0, 0.2, 0.1)
-    top_p = st.slider("Top-P", 0.0, 1.0, 0.9, 0.05)
-    top_k = st.slider("Nombre de documents (Top-K)", 1, 10, 3, 1)
-    debug_mode = st.toggle("Mode Expert (Debug)", value=False)
-
-    st.divider()
-    
-    if st.button("🗑️ Effacer la discussion", use_container_width=True):
+    if st.button("Effacer l'historique"):
         st.session_state.messages = []
         st.rerun()
+    
+    st.divider()
+    st.write("### À propos")
+    st.write("Cet assistant utilise un système RAG (Retrieval Augmented Generation) basé sur :")
+    st.write("- **Embeddings :** Google Gemini")
+    st.write("- **LLM :** Kimi K2 (Groq)")
 
-    st.markdown("---")
-    st.markdown("Version 3.1 • *Kimi K2 & Pipeline Intégrée*")
+# --- Contenu Principal ---
+st.title("🤖 Assistant de la Mairie")
+st.subheader("Triffouillis-sur-Loire")
+st.info("Je réponds à vos questions sur les services municipaux, les travaux et les événements.")
 
-# ==============================================================================
-# ZONE PRINCIPALE (Le reste reste identique)
-# ==============================================================================
-st.title("🏛️ Mairie de Triffouillis-sur-Loire")
-st.markdown("##### *Votre assistant virtuel pour toutes les démarches municipales.*")
-
-# Initialisation de l'historique
+# Initialisation de l'historique dans la session
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- Affichage de l'historique ---
+# Affichage des messages passés
 for message in st.session_state.messages:
-    role = message["role"]
-    avatar = "🧑‍💻" if role == "user" else "🏛️"
-    with st.chat_message(role, avatar=avatar):
+    with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        if "sources" in message and message["sources"]:
-            with st.expander(f"📚 {len(message['sources'])} Documents consultés"):
-                for idx, doc in enumerate(message["sources"]):
-                    st.markdown(f"""<div class="source-box"><span class="source-title">Source {idx+1} : {doc.get('source', 'Inconnu')}</span><div>{doc['content'][:400]}...</div></div>""", unsafe_allow_html=True)
+        if "docs" in message and message["docs"]:
+            with st.expander("Sources consultées"):
+                for i, doc in enumerate(message["docs"]):
+                    source_name = doc.get('source') or doc.get('document_source') or "Inconnue"
+                    st.markdown(f"**Source {i+1} :** {source_name}")
+                    st.caption(doc.get('content', '')[:200] + "...")
 
-# --- Zone de saisie ---
-if "agent" in st.session_state:
-    if prompt := st.chat_input("Posez votre question ici..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="🧑‍💻"):
-            st.markdown(prompt)
+# Zone de saisie utilisateur
+if prompt := st.chat_input("Comment puis-je vous aider ?"):
+    # Affichage du message utilisateur
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        with st.chat_message("assistant", avatar="🏛️"):
-            message_placeholder = st.empty()
-            with st.spinner("Recherche..."):
+    # Génération de la réponse
+    with st.chat_message("assistant"):
+        if agent:
+            with st.spinner("Recherche et génération..."):
                 try:
-                    answer, sources = st.session_state.agent.ask(prompt, history=st.session_state.messages, k=top_k, temperature=temperature, top_p=top_p)
-                    message_placeholder.markdown(answer)
-                    if sources:
-                        with st.expander(f"📚 Voir les sources"):
-                            for idx, doc in enumerate(sources):
-                                st.markdown(f"""<div class="source-box"><span class="source-title">Source {idx+1} : {doc.get('source', 'Inconnu')}</span><div>{doc['content'][:400]}...</div></div>""", unsafe_allow_html=True)
-                    st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
+                    # On passe l'historique pour la reformulation
+                    history = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
+                    
+                    # Appel avec les paramètres dynamiques
+                    answer, docs = agent.ask(
+                        prompt, 
+                        history=history, 
+                        k=top_k, 
+                        temperature=temp, 
+                        top_p=top_p
+                    )
+                    
+                    st.markdown(answer)
+                    
+                    # Affichage des sources
+                    if docs:
+                        with st.expander("Sources consultées"):
+                            for i, doc in enumerate(docs):
+                                source_name = doc.get('source') or doc.get('document_source') or "Inconnue"
+                                st.markdown(f"**Source {i+1} :** {source_name}")
+                                st.caption(doc.get('content', '')[:300] + "...")
+                    
+                    # Sauvegarde dans la session
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": answer,
+                        "docs": docs
+                    })
                 except Exception as e:
-                    st.error(f"Erreur : {e}")
-else:
-    st.warning("⚠️ L'agent n'est pas initialisé. Ajoutez des documents et lancez l'indexation si nécessaire.")
+                    error_msg = f"Désolé, une erreur est survenue : {str(e)}"
+                    st.error(error_msg)
+        else:
+            st.error("L'agent n'a pas pu être chargé. Vérifiez vos clés API.")

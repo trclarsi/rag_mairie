@@ -41,5 +41,5 @@ def clean_base64_images(directory_path):
 
 if __name__ == "__main__":
     # Chemin vers le dossier contenant les fichiers markdown
-    target_folder = r"D:\Academique\Formation\DL\Projet_RAG\markdown_outputs"
+    target_folder = r"/teamspace/studios/this_studio/rag_mairie/markdown_outputs"
     clean_base64_images(target_folder)

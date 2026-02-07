@@ -5,7 +5,12 @@ import numpy as np
 import faiss
 import argparse
 import sys
+import time
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 # --- IMPORT DES LIBRAIRIES DE MODÈLES ---
 from sentence_transformers import SentenceTransformer
@@ -24,7 +29,7 @@ BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 CHUNKED_DOCS_DIR = os.path.join(BASE_DIR, 'chunked_documents_by_tags')
 
 # Sortie : Dossier où l'index FAISS sera stocké
-FAISS_OUTPUT_DIR = os.path.join(SCRIPT_DIR, 'faiss_indexes')
+FAISS_OUTPUT_DIR = os.path.join(BASE_DIR, 'faiss_indexes')
 
 # Chemins spécifiques aux modèles locaux
 FASTTEXT_MODEL_PATH = os.path.join(BASE_DIR, 'embedding', 'cc.fr.300.bin')
@@ -81,20 +86,44 @@ def get_embeddings(method: str, texts: List[str]) -> np.ndarray:
                 raise ValueError("Clé API manquante.")
         
         genai.configure(api_key=api_key)
-        model_name = "models/text-embedding-004"
+        model_name = "models/gemini-embedding-001"
         print(f"Appel API Gemini ({model_name})...")
         
         try:
-            batch_size = 100
+            batch_size = 50
+            total_batches = (len(texts) + batch_size - 1) // batch_size
+            
             for i in range(0, len(texts), batch_size):
                 batch = texts[i:i+batch_size]
-                # Le task_type est important pour l'indexation
-                resp = genai.embed_content(
-                    model=model_name,
-                    content=batch,
-                    task_type="retrieval_document"
-                )
-                embeddings.extend(resp['embedding'])
+                batch_num = i // batch_size + 1
+                
+                max_retries = 10
+                wait_time = 20
+                
+                for attempt in range(max_retries):
+                    try:
+                        # Le task_type est important pour l'indexation
+                        resp = genai.embed_content(
+                            model=model_name,
+                            content=batch,
+                            task_type="retrieval_document"
+                        )
+                        embeddings.extend(resp['embedding'])
+                        print(f"✅ Gemini: Batch {batch_num}/{total_batches} traité.")
+                        
+                        # Petit délai de courtoisie
+                        time.sleep(2)
+                        break
+                    except Exception as e:
+                        if "429" in str(e) or "quota" in str(e).lower():
+                            if attempt < max_retries - 1:
+                                print(f"⚠️ Quota atteint. Attente de {wait_time}s (Tentative {attempt+1}/{max_retries})...")
+                                time.sleep(wait_time)
+                                wait_time *= 1.5
+                            else:
+                                raise e
+                        else:
+                            raise e
             
             embeddings = np.array(embeddings)
             

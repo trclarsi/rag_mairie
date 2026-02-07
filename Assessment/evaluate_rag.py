@@ -1,15 +1,24 @@
+
 import os
 import json
 import pandas as pd
+import time
 from datasets import Dataset
 from ragas import evaluate
+from ragas.run_config import RunConfig
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
+
 from ragas.metrics import (
-    Faithfulness,
-    AnswerRelevancy,
-    ContextPrecision,
-    ContextRecall,
+    faithfulness,
+    answer_relevancy,
+    context_precision,
+    context_recall,
 )
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_groq import ChatGroq
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # Import de votre agent
 import sys
@@ -22,98 +31,89 @@ from query_rag import RAGAgent
 # CONFIGURATION
 # ==============================================================================
 
-# Fichier de test
 TEST_FILE = os.path.join(SCRIPT_DIR, "test_questions.json")
+KIMI_MODEL = "moonshotai/kimi-k2-instruct-0905"
 
 def run_assessment():
-    print("🚀 Démarrage de l'évaluation RAG...")
+    print("\n" + "="*60)
+    print("🚀 ÉVALUATION RAG : JUGE = KIMI K2 | EMBEDDINGS = GEMINI")
+    print("="*60)
     
-    # 0. Configuration de la clé API
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        print("⚠️ Variable GOOGLE_API_KEY non trouvée.")
-        api_key = input("Veuillez entrer votre clé API Google Gemini pour l'évaluation : ").strip()
-        os.environ["GOOGLE_API_KEY"] = api_key
+    google_key = os.environ.get("GOOGLE_API_KEY")
+    groq_key = os.environ.get("GROQ_API_KEY")
+    
+    if not google_key or not groq_key:
+        print("❌ Erreur : Clés API manquantes.")
+        return
 
-    # Initialisation des modèles pour l'évaluation (Ragas a besoin d'un LLM "juge")
-    evaluator_llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash", 
-        google_api_key=api_key
-    )
+    # Juge LLM
+    evaluator_llm = ChatGroq(model=KIMI_MODEL, groq_api_key=groq_key, temperature=0)
+    
+    # Embeddings (Nom du modèle corrigé pour LangChain)
     evaluator_embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", 
-        google_api_key=api_key
+        model="text-embedding-004", 
+        google_api_key=google_key
     )
     
-    # 1. Charger les questions de test
+    # 1. Charger les tests
     with open(TEST_FILE, 'r', encoding='utf-8') as f:
         test_data = json.load(f)
     
-    # 2. Initialiser l'agent RAG
-    try:
-        agent = RAGAgent()
-    except Exception as e:
-        print(f"❌ Erreur d'initialisation de l'agent : {e}")
-        return
+    # 2. Init Agent
+    agent = RAGAgent()
 
-    # 3. Collecter les réponses du RAG
-    questions = []
-    answers = []
-    contexts = []
-    ground_truths = []
+    # 3. Collecte
+    questions, answers, contexts, ground_truths = [], [], [], []
+    print(f"\n📝 Phase 1 : Collecte des réponses...")
 
-    for item in test_data:
-        question = item['question']
-        print(f"🔍 Test de la question : {question}")
-        
-        # Obtenir la réponse et les documents sources
-        answer, docs = agent.ask(question)
-        
-        questions.append(question)
+    for i, item in enumerate(test_data):
+        print(f"   [{i+1}/{len(test_data)}] Question : {item['question']}")
+        answer, docs = agent.ask(item['question'])
+        questions.append(item['question'])
         answers.append(answer)
-        # Ragas attend une liste de listes de strings pour les contextes
-        contexts.append([doc['content'] for doc in docs])
+        contexts.append([doc.get('content', '') for doc in docs])
         ground_truths.append(item['ground_truth'])
+        time.sleep(1)
 
-    # 4. Préparer le dataset pour Ragas
-    data_dict = {
-        "question": questions,
-        "answer": answers,
-        "contexts": contexts,
-        "ground_truth": ground_truths
-    }
-    dataset = Dataset.from_dict(data_dict)
+    # 4. Dataset
+    dataset = Dataset.from_dict({
+        "question": questions, "answer": answers, 
+        "contexts": contexts, "ground_truth": ground_truths
+    })
 
-    # 5. Lancer l'évaluation
-    print("\n⚖️ Calcul des métriques Ragas (Gemini est le juge)...")
+    # 5. Évaluation avec RunConfig pour éviter les 429
+    print("\n⚖️ Phase 2 : Calcul des métriques Ragas...")
     
-    result = evaluate(
-        dataset,
-        metrics=[
-            Faithfulness(),
-            AnswerRelevancy(),
-            ContextPrecision(),
-            ContextRecall(),
-        ],
-        llm=evaluator_llm,
-        embeddings=evaluator_embeddings
-    )
+    try:
+        # max_workers=1 et thread_timeout pour stabiliser Groq
+        config = RunConfig(max_workers=1, timeout=60)
+        
+        result = evaluate(
+            dataset,
+            metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+            llm=evaluator_llm,
+            embeddings=evaluator_embeddings,
+            run_config=config
+        )
 
-    # 6. Afficher et sauvegarder les résultats
-    print("\n" + "="*60)
-    print("📊 RÉSULTATS DE L'ÉVALUATION")
-    print("="*60)
-    df = result.to_pandas()
-    # Affichage des colonnes disponibles
-    cols_to_show = ['question', 'faithfulness', 'answer_relevancy', 'context_precision', 'context_recall']
-    # On ne garde que les colonnes qui existent réellement dans le DF pour éviter les erreurs
-    existing_cols = [c for c in cols_to_show if c in df.columns]
-    print(df[existing_cols])
-    
-    output_csv = os.path.join(SCRIPT_DIR, "assessment_results.csv")
-    df.to_csv(output_csv, index=False)
-    print(f"\n✅ Résultats complets sauvegardés dans : {output_csv}")
-    print(f"Scores moyens : \n{result}")
+        # 6. Résultats
+        print("\n" + "="*60)
+        print("📊 RÉSULTATS DE L'ÉVALUATION")
+        print("="*60)
+        
+        df = result.to_pandas()
+        
+        # Affichage sécurisé des colonnes
+        cols = ['question', 'faithfulness', 'answer_relevancy', 'context_precision', 'context_recall']
+        existing_cols = [c for c in cols if c in df.columns]
+        print(df[existing_cols])
+        
+        output_csv = os.path.join(SCRIPT_DIR, "assessment_results.csv")
+        df.to_csv(output_csv, index=False)
+        print(f"\n✅ Rapport : {output_csv}\nScores moyens :\n{result}")
+
+    except Exception as e:
+        print(f"❌ Erreur lors de l'évaluation : {e}")
 
 if __name__ == "__main__":
     run_assessment()

@@ -36,7 +36,6 @@ def convert_documents_to_markdown(input_dir, output_dir):
     print("Initialisation du convertisseur Docling (avec OCR)...")
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
-    pipeline_options.ocr_options.use_gpu = False # Mettre à True si disponible
 
     converter = DocumentConverter(
         format_options={

@@ -6,7 +6,12 @@ import requests
 import re
 import json
 import logging
+import time
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 from sklearn.manifold import TSNE
 from sklearn.metrics.pairwise import cosine_similarity
@@ -34,7 +39,7 @@ MAX_CHUNKS_TO_ANALYZE = 300
 
 # 3. Configuration des modèles
 SBERT_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
-GEMINI_EMBED_MODEL = "models/text-embedding-004"
+GEMINI_EMBED_MODEL = "models/gemini-embedding-001"
 
 # 4. Chemin et URL pour le modèle FastText (français)
 FASTTEXT_MODEL_PATH = 'cc.fr.300.bin'
@@ -140,16 +145,42 @@ def main_embedder():
         try:
             genai.configure(api_key=api_key)
             all_embeddings = []
-            batch_size = 100  # Gemini a souvent une limite de batch
+            batch_size = 50  # Réduire légèrement la taille du batch pour plus de sécurité
+            
+            total_batches = (len(texts) + batch_size - 1) // batch_size
             
             for i in range(0, len(texts), batch_size):
                 batch = texts[i:i+batch_size]
-                response = genai.embed_content(
-                    model=GEMINI_EMBED_MODEL,
-                    content=batch,
-                    task_type="retrieval_document"
-                )
-                all_embeddings.extend(response['embedding'])
+                batch_num = i // batch_size + 1
+                
+                max_retries = 10
+                wait_time = 20  # Temps d'attente initial en secondes
+                
+                for attempt in range(max_retries):
+                    try:
+                        response = genai.embed_content(
+                            model=GEMINI_EMBED_MODEL,
+                            content=batch,
+                            task_type="retrieval_document"
+                        )
+                        all_embeddings.extend(response['embedding'])
+                        logging.info(f"Gemini: Batch {batch_num}/{total_batches} traité.")
+                        
+                        # Petit délai entre les batches pour éviter de saturer le quota
+                        time.sleep(2) 
+                        break
+                    except Exception as e:
+                        error_msg = str(e)
+                        if "429" in error_msg or "quota" in error_msg.lower():
+                            if attempt < max_retries - 1:
+                                logging.warning(f"Quota atteint (429) au batch {batch_num}. Tentative {attempt+1}/{max_retries}. Attente de {wait_time}s...")
+                                time.sleep(wait_time)
+                                wait_time *= 1.5  # Backoff progressif
+                            else:
+                                logging.error("Nombre maximum de tentatives atteint pour Gemini.")
+                                raise e
+                        else:
+                            raise e
 
             gemini_embeddings = np.array(all_embeddings)
             visualize_embeddings(gemini_embeddings, labels, title="Embeddings Gemini")
@@ -184,24 +215,6 @@ def main_embedder():
     # --- 4. Analyse avec FastText ---
     logging.info("\n" + "="*50)
     logging.info("DÉBUT DE L'ANALYSE : FASTTEXT")
-    
-# --- 4. Analyse avec FastText ---
-    # ... (code de vérification/chargement du modèle) ...
-    try:
-        if os.path.exists(FASTTEXT_MODEL_PATH):
-            ft_model = load_facebook_model(FASTTEXT_MODEL_PATH)
-            fasttext_embeddings = np.array([ft_model.get_sentence_vector(text) for text in texts])
-            visualize_embeddings(fasttext_embeddings, labels, title="Embeddings FastText")
-            
-            # AJOUT : Calcul et affichage de la Matrice de Similarité FastText
-            similarity_matrix_ft = cosine_similarity(fasttext_embeddings)
-            logging.info("\nMatrice de similarité (FastText, 5x5) :")
-            print(np.round(similarity_matrix_ft[:5, :5], 2))
 
-        else:
-            logging.warning("Le modèle FastText n'a pas pu être chargé. L'analyse est ignorée.")
-    except Exception as e:
-        logging.error(f"Erreur lors de la génération des embeddings FastText : {e}")
-        
 if __name__ == "__main__":
     main_embedder()
