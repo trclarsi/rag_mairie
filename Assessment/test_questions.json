@@ -1,0 +1,46 @@
+[
+    {
+        "question": "Quelles sont les dates et le lieu du marché de Noël 2023 ?",
+        "ground_truth": "Le marché de Noël 2023 se tiendra le samedi 16 et le dimanche 17 décembre 2023 sur la Place du Grand Chêne."
+    },
+    {
+        "question": "Quel est le budget total prévu pour l'année 2024 ?",
+        "ground_truth": "Le budget total pour l'année 2024 est de 1 450 000 euros (850 000 € en fonctionnement et 600 000 € en investissement)."
+    },
+    {
+        "question": "Qui sont les exposants prévus pour le marché de Noël ?",
+        "ground_truth": "Les exposants incluent Les Lutins du Crochet, La Boutique des Licornes de Noël, Les Bougies Magiques de Mamie Paulette et Le Bric-à-Brac du Père Fouettard."
+    },
+    {
+        "question": "Quels travaux sont prévus pour la voirie centrale ?",
+        "ground_truth": "Le projet de rénovation de la voirie centrale prévoit la réfection des pavés, l'élargissement des trottoirs pour l'accessibilité PMR et l'installation de nouveau mobilier urbain."
+    },
+    {
+        "question": "Quels sont les trois bâtiments municipaux concernés par l'étude de faisabilité pour l'installation de panneaux photovoltaïques ?",
+        "ground_truth": "Les trois bâtiments concernés sont la Mairie, l'École Primaire Jean Moulin et le Gymnase Municipal."
+    },
+    {
+        "question": "Quelle est la surface exploitable totale estimée pour l'installation des panneaux solaires et quel pourcentage de la consommation électrique cela pourrait-il couvrir ?",
+        "ground_truth": "La surface exploitable totale est estimée à environ 950 m² et la production pourrait couvrir entre 25% et 40% de la consommation électrique actuelle de ces bâtiments."
+    },
+    {
+        "question": "Quel est le budget prévu pour l'installation du système de surveillance urbaine et combien de caméras seront déployées ?",
+        "ground_truth": "Le budget prévu est de 400 000 € et le système comprendra 75 caméras de vidéoprotection réparties sur le territoire communal."
+    },
+    {
+        "question": "Quels sont les principaux objectifs de la création du Centre Culturel Innovant ?",
+        "ground_truth": "Les objectifs incluent la diversification de l'offre culturelle, le soutien à la création artistique locale, l'accès à la culture pour tous, le développement de l'éducation artistique, la stimulation de l'économie créative, le renforcement de l'attractivité du territoire, la création d'un lieu de vie et de rencontre, et l'encouragement de l'innovation."
+    },
+    {
+        "question": "Où se déroule la Fête des Saveurs Insolites et quels sont les exposants mentionnés ?",
+        "ground_truth": "La fête se déroule au Jardin des Délices à Triffouillis-sur-Loire. Les exposants mentionnés sont Epicurieux, Les Papilles en Folie et Bulle de Goût."
+    },
+    {
+        "question": "Quel est le montant du budget pour le projet de Centre Culturel Innovant et quand a-t-il été lancé ?",
+        "ground_truth": "Le projet a été lancé le 20 janvier 2024 avec un budget de 1 200 000 €."
+    },
+    {
+        "question": "Que contient le Titre II du règlement municipal de Trifouillis-sur-Loire ?",
+        "ground_truth": "Le Titre II porte sur l'ordre public et la sécurité, incluant la tranquillité publique, la circulation et le stationnement, la salubrité publique, la police municipale, les animaux, les débits de boissons et la sécurité des bâtiments."
+    }
+]

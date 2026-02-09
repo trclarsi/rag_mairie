@@ -51,7 +51,7 @@ def run_assessment():
     
     # Embeddings (Nom du modèle corrigé pour LangChain)
     evaluator_embeddings = GoogleGenerativeAIEmbeddings(
-        model="text-embedding-004", 
+        model="models/gemini-embedding-001", 
         google_api_key=google_key
     )
     

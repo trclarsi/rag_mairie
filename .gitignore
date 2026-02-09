@@ -1,5 +1,6 @@
 # --- Sécurité & Environnement ---
 .env
+.env.*
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,27 +10,33 @@ ENV/
 .python-version
 
 # --- Données Source (Corpus) ---
-# On ignore le contenu confidentiel mais on garde la structure
-#Corpus/*
-#!Corpus/.gitkeep
+# On ignore le contenu des documents pour GitHub
+Corpus/*
+!Corpus/.gitkeep
 
-# --- Sorties Intermédiaires (Générées) ---
-markdown_outputs/*
-!markdown_outputs/.gitkeep
-chunked_documents_by_tags/*
-!chunked_documents_by_tags/.gitkeep
-Assessment/assessment_results.csv
-
-# --- Index & Modèles (Lourds / Binaires) ---
+# --- Sorties Intermédiaires & Index ---
+markdown_outputs/
+chunked_documents_by_tags/
 faiss_indexes/
-Embedding/cc.fr.300.bin
-*.zip
+Embedding/*.bin
 *.bin
-*.json
-# Exception pour les fichiers de config ou de metadata nécessaires si besoin
-!pyproject.toml
-!poetry.lock
-!Querying/*.json
+*.zip
+*.7z
+*.rar
+
+# --- Résultats d'Évaluation ---
+Assessment/assessment_results*.csv
+
+# --- Fichiers Markdown ---
+# On ignore tous les .md par défaut
+*.md
+# Exceptions : on garde README et cours
+!README.md
+!cours.md
+
+# --- Visualisations & HTML ---
+*.html
+visualisation_embeddings_*.html
 
 # --- Outils & IDE ---
 .vscode/
@@ -37,3 +44,8 @@ Embedding/cc.fr.300.bin
 .DS_Store
 *.log
 .gemini/
+
+# --- Package Manager ---
+!pyproject.toml
+!poetry.lock
+!Querying/*.json
