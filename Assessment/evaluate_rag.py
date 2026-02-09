@@ -103,14 +103,30 @@ def run_assessment():
         
         df = result.to_pandas()
         
-        # Affichage sécurisé des colonnes
-        cols = ['question', 'faithfulness', 'answer_relevancy', 'context_precision', 'context_recall']
-        existing_cols = [c for c in cols if c in df.columns]
-        print(df[existing_cols])
+        # Identification des colonnes de métriques
+        metric_cols = ['faithfulness', 'answer_relevancy', 'context_precision', 'context_recall']
+        # S'assurer que les colonnes existent (Ragas peut changer les noms selon la version)
+        actual_metrics = [c for c in metric_cols if c in df.columns]
         
+        # Calcul des moyennes pour la ligne de résumé
+        summary = df[actual_metrics].mean()
+        summary_df = pd.DataFrame([["MOYENNE GÉNÉRALE"] + ["-"] * (len(df.columns) - len(actual_metrics) - 1) + summary.tolist()], 
+                                  columns=df.columns)
+        
+        # Concaténer les résultats avec la ligne de résumé
+        final_df = pd.concat([df, summary_df], ignore_index=True)
+        
+        # Sauvegarde
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
         output_csv = os.path.join(SCRIPT_DIR, "assessment_results.csv")
-        df.to_csv(output_csv, index=False)
-        print(f"\n✅ Rapport : {output_csv}\nScores moyens :\n{result}")
+        history_csv = os.path.join(SCRIPT_DIR, f"assessment_results_{timestamp}.csv")
+        
+        final_df.to_csv(output_csv, index=False, encoding='utf-8-sig')
+        final_df.to_csv(history_csv, index=False, encoding='utf-8-sig')
+        
+        print(f"\n✅ Rapport sauvegardé : {output_csv}")
+        print(f"✅ Historique sauvegardé : {history_csv}")
+        print(f"\nScores moyens :\n{summary}")
 
     except Exception as e:
         print(f"❌ Erreur lors de l'évaluation : {e}")

@@ -31,7 +31,7 @@ MARKDOWN_DIR = BASE_DIR / "markdown_outputs"
 CHUNKS_DIR = BASE_DIR / "chunked_documents_by_tags"
 INDEX_DIR = BASE_DIR / "faiss_indexes" / "gemini"
 
-EMBEDDING_MODEL = "models/text-embedding-004"
+EMBEDDING_MODEL = "models/gemini-embedding-001"
 AUDIO_EXTENSIONS = {'.wav', '.mp3', '.m4a', '.ogg', '.flac'}
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.tiff', '.bmp'}
 MAX_CHUNK_SIZE = 1500

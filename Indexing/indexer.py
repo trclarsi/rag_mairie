@@ -15,7 +15,7 @@ load_dotenv()
 # --- IMPORT DES LIBRAIRIES DE MODÈLES ---
 from sentence_transformers import SentenceTransformer
 from gensim.models.fasttext import load_facebook_model
-# pip install google-generativeai
+
 import google.generativeai as genai
 
 # ==============================================================================
