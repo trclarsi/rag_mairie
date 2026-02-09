@@ -73,7 +73,7 @@ python Assessment/evaluate_rag.py
 ```
 
 ## 📈 Résultats d'Évaluation
-Les derniers tests montrent un score de **Fidélité de 0.82** et une **Pertinence de 0.91**. Le système privilégie la sécurité en indiquant qu'il ne dispose pas de l'information plutôt que d'halluciner.
+Les derniers tests montrent un score de **Fidélité de 0.82**. Le système privilégie la sécurité en indiquant qu'il ne dispose pas de l'information plutôt que d'halluciner.
 
 ---
 *Projet réalisé dans le cadre de la formation Deep Learning - Spécialisation RAG.*
