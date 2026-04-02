@@ -1,79 +1,25 @@
-# 🏛️ Assistant RAG - Mairie de Triffouillis-sur-Loire
+# RAG Mairie
 
-Ce projet implémente un système de **Génération Augmentée par Récupération (RAG)** pour assister les citoyens et les agents de la mairie de Triffouillis-sur-Loire. Il permet de poser des questions complexes sur les règlements municipaux, les budgets, les projets urbains et les comptes-rendus de conseils.
+## Overview
+This project leverages Retrieval-Augmented Generation (RAG) to provide efficient and relevant responses using advanced AI techniques.  
 
-## 🚀 Fonctionnalités Clés
+## Technology Badges
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)  
+[![PyTorch](https://img.shields.io/badge/pytorch-1.7.1-red.svg)](https://pytorch.org/)  
+[![Transformers](https://img.shields.io/badge/transformers-4.0.0-yellow.svg)](https://huggingface.co/docs/transformers)  
 
-- **Multimodalité** : Ingestion de PDF, fichiers Word, CSV et même des fichiers audio (Vœux du Maire) via **Whisper**.
-- **Recherche Sémantique** : Utilisation des embeddings **Gemini (text-embedding-004)** et de la bibliothèque **FAISS** pour une recherche instantanée et précise.
-- **Chunking Structurel** : Découpage intelligent basé sur le format Markdown pour préserver l'unité des articles de loi.
-- **Évaluation Scientifique** : Audit automatique des réponses via le framework **Ragas** avec calcul de la fidélité et de la pertinence.
-- **Interface Interactive** : Application web développée avec **Streamlit**.
+## RAG Architecture
+The RAG architecture integrates two key components: the retriever and the generator.  
+The retriever fetches relevant documents based on the query, while the generator processes these documents to produce informed responses.  
 
-## 🛠️ Stack Technique
+1. **Retriever**: Utilizes vector embeddings to find related documents.  
+2. **Generator**: A transformer model that formulates answers based on retrieved documents.  
 
-- **Langage** : Python 3.10+
-- **LLM** : Kimi K2 (via Groq) & Gemini Pro
-- **Embeddings** : Google Gemini API
-- **Vector Store** : FAISS
-- **Extraction & OCR** : Docling, EasyOCR
-- **Transcription** : OpenAI Whisper
-- **Interface** : Streamlit
-- **Évaluation** : Ragas
+## Evaluation Metrics
+The performance of the model is evaluated based on the following metrics:  
+- **Accuracy**: Measures the correctness of generated responses.  
+- **F1 Score**: Evaluates the balance between precision and recall.  
+- **Relevance Score**: Assesses how relevant the generated answers are to the original query.  
 
-## 📂 Structure du Projet
-
-```text
-├── Assessment/             # Scripts et données d'évaluation (Ragas)
-│   ├── evaluate_rag.py     # Script principal d'évaluation
-│   ├── test_questions.json # Set de test (Questions/Ground Truth)
-│   └── assessment_results.csv # Résultats détaillés des indicateurs
-├── Corpus/                 # Documents sources (PDF, DOCX, CSV, WAV)
-├── Querying/               # Cœur de l'application
-│   ├── app.py              # Interface Streamlit
-│   ├── query_rag.py        # Agent RAG (Logique métier)
-│   └── pipeline.py         # Pipeline d'ingestion et d'indexation
-├── faiss_indexes/          # Index vectoriels générés
-├── markdown_outputs/       # Documents convertis en Markdown pour le processing
-└── publications_linkedin.md # Série de posts pour la communication projet
-```
-
-## ⚙️ Installation
-
-1. **Cloner le projet**
-2. **Installer les dépendances** :
-   ```bash
-   pip install -r requirements.txt  # Ou via poetry install
-   ```
-3. **Configurer les variables d'environnement** :
-   Créer un fichier `.env` à la racine :
-   ```env
-   GOOGLE_API_KEY=votre_cle_gemini
-   GROQ_API_KEY=votre_cle_groq
-   ```
-
-## 📖 Utilisation
-
-### 1. Préparation des données (Ingestion & Indexation)
-Lancez le pipeline pour transformer les documents du `Corpus` en index vectoriel :
-```bash
-python Querying/pipeline.py
-```
-
-### 2. Lancer l'Assistant (Interface Web)
-Démarrez l'application Streamlit pour interagir avec le RAG :
-```bash
-streamlit run Querying/app.py
-```
-
-### 3. Évaluation des performances
-Calculez les métriques de fidélité et de pertinence :
-```bash
-python Assessment/evaluate_rag.py
-```
-
-## 📈 Résultats d'Évaluation
-Les derniers tests montrent un score de **Fidélité de 0.82**. Le système privilégie la sécurité en indiquant qu'il ne dispose pas de l'information plutôt que d'halluciner.
-
----
-*Projet réalisé dans le cadre de la formation Deep Learning - Spécialisation RAG.*
+## Conclusion
+The project aims to enhance information retrieval and response generation through innovative RAG practices, and we encourage collaboration and contributions.
